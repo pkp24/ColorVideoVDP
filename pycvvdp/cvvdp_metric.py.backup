@@ -566,17 +566,11 @@ class cvvdp(vq_metric):
 
         Q_sc = self.lp_norm(Q_per_ch*per_ch_w*per_sband_w, self.beta_sch, dim=3, normalize=False)  # Sum across spatial bands
 
-        # DEBUG: Print Q_sc (spatial-channel aggregated scores)
-        if Q_per_ch.shape[0] > 0:  # batch_sz > 0
-            Q_sc_sample = Q_sc[0,:,0]  # batch=0, frame=0
-            print(f"DEBUG_PY_AGG: Q_sc={Q_sc_sample.cpu().numpy()}", flush=True)
-            print(f"DEBUG_PY_AGG: beta_sch={self.beta_sch}, beta_tch={self.beta_tch}", flush=True)
-
         is_image = (no_frames==1)
         t_int = self.image_int if is_image else 1.0 # Integration correction for images
 
         if not self.block_channels is None:
-            Q_tc = self.lp_norm(Q_sc[self.block_channels[0:no_channels],...], self.beta_tch, dim=1, normalize=False)  # Sum across temporal and chromatic channels
+            Q_tc = self.lp_norm(Q_sc[self.block_channels[0:no_channels],...], self.beta_tch, dim=1, normalize=False)  # Sum across temporal and chromatic channels                
         else:
             Q_tc = self.lp_norm(Q_sc,     self.beta_tch, dim=1, normalize=False)  # Sum across temporal and chromatic channels
 
@@ -585,12 +579,7 @@ class cvvdp(vq_metric):
         else:
             Q = self.lp_norm(Q_tc,     self.beta_t,   dim=2, normalize=True)   # Sum across frames
 
-        # DEBUG: Print Q_tc and final Q
-        if Q_tc.numel() > 0:
-            print(f"DEBUG_PY_AGG: Q_tc (before frame pooling)={Q_tc.cpu().numpy() if Q_tc.dim() > 0 else Q_tc.item()}", flush=True)
-
         Q = Q.squeeze()
-        print(f"DEBUG_PY_AGG: Q_per_ch (final)={Q.item() if Q.dim() == 0 else Q.cpu().numpy()}", flush=True)
 
         Q_JOD = self.met2jod(Q)            
         return Q_JOD
@@ -673,11 +662,6 @@ class cvvdp(vq_metric):
             #assert (not D.isnan().any()) and (not D.isinf().any()) and (D>=0).all(), "Must not be nan and must be positive"
 
             Q_per_ch_block[:,:,:,bb] = self.lp_norm(D, self.beta, dim=(-2,-1), normalize=True, keepdim=False) # Pool across all pixels (spatial pooling)
-
-            # DEBUG: Print per-band scores
-            if bb < 10:  # Only print first 10 bands
-                band_scores = Q_per_ch_block[0,:,0,bb]  # batch=0, frame=0
-                print(f"DEBUG_PY_BAND[{bb}]: band_scores={band_scores.cpu().numpy()}", flush=True)
 
             if self.do_heatmap:
 
