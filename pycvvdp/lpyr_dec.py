@@ -397,12 +397,40 @@ class weber_contrast_pyr(lpyr_dec):
                 else:
                     raise RuntimeError( f"Contrast {self.contrast} not supported")
 
+            # Debug: Print Gaussian pyramid values for first few pixels
+            if i <= 2:  # Only for first few bands to avoid spam
+                print(f"DEBUG_PYTHON_GAUSSIAN[band={i}]: is_baseband={is_baseband}, contrast={self.contrast}")
+                if is_baseband:
+                    # For baseband, show current Gaussian values
+                    test_y_curr = gpyr[i][0, 0, 0, 0, 0].item()  # test-sustained-Y
+                    ref_y_curr = gpyr[i][0, 1, 0, 0, 0].item()   # ref-sustained-Y
+                    print(f"  test_y_curr={test_y_curr:.6f}, ref_y_curr={ref_y_curr:.6f}")
+                    print(f"  L_bkg shape: {L_bkg.shape}, L_bkg[0,0,0,0,0]={L_bkg[0,0,0,0,0].item():.6f}")
+                else:
+                    # For non-baseband, show current and expanded values
+                    test_y_curr = gpyr[i][0, 0, 0, 0, 0].item()  # test-sustained-Y
+                    ref_y_curr = gpyr[i][0, 1, 0, 0, 0].item()   # ref-sustained-Y
+                    test_y_exp = glayer_ex[0, 0, 0, 0, 0].item()  # test-sustained-Y expanded
+                    ref_y_exp = glayer_ex[0, 1, 0, 0, 0].item()   # ref-sustained-Y expanded
+                    print(f"  test_y_curr={test_y_curr:.6f}, ref_y_curr={ref_y_curr:.6f}")
+                    print(f"  test_y_exp={test_y_exp:.6f}, ref_y_exp={ref_y_exp:.6f}")
+                    print(f"  L_bkg shape: {L_bkg.shape}, L_bkg[0,0,0,0,0]={L_bkg[0,0,0,0,0].item():.6f}")
+
             if L_bkg.shape[-4]==2: # If L_bkg NOT identical for the test and reference images
                 contrast = torch.empty_like(layer)
                 contrast[...,0::2,:,:,:] = torch.clamp(torch.div(layer[...,0::2,:,:,:], L_bkg[...,0:1,:,:,:]), max=1000.0)    
                 contrast[...,1::2,:,:,:] = torch.clamp(torch.div(layer[...,1::2,:,:,:], L_bkg[...,1:2,:,:,:]), max=1000.0)    
             else:
                 contrast = torch.clamp(torch.div(layer, L_bkg), max=1000.0)
+
+            # Debug: Print background values after computation
+            if i <= 2:  # Only for first few bands
+                log_L_bkg = torch.log10(L_bkg)
+                print(f"  log_L_bkg[0,0,0,0,0]={log_L_bkg[0,0,0,0,0].item():.6f}")
+                # Show a few sample values
+                if L_bkg.numel() > 5:
+                    print(f"  L_bkg samples: {L_bkg[0,0,0,0,:5].cpu().numpy()}")
+                    print(f"  log_L_bkg samples: {log_L_bkg[0,0,0,0,:5].cpu().numpy()}")
 
             lpyr.append(contrast)
             L_bkg_pyr.append(torch.log10(L_bkg))

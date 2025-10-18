@@ -165,6 +165,9 @@ class cvvdp(vq_metric):
         self.csf = parameters['csf']
         self.local_adapt = parameters['local_adapt'] # Local adaptation: 'simple' or or 'gpyr'
         self.contrast = parameters['contrast']  # One of: 'weber_g0_ref', 'weber_g1_ref', 'weber_g1', 'log'
+        
+        # Debug: Print contrast mode
+        print(f"DEBUG_PYTHON_CVVDP: contrast_mode={self.contrast}, local_adapt={self.local_adapt}")
         self.jod_a = torch.as_tensor( parameters['jod_a'], device=self.device )
         self.jod_exp = torch.as_tensor( parameters['jod_exp'], device=self.device )
 
